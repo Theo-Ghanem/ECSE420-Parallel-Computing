@@ -6,7 +6,7 @@ import java.util.concurrent.Executors;
 public class MatrixMultiplication {
 	
 	private static final int NUMBER_THREADS = 1;
-	private static final int MATRIX_SIZE = 2000;
+	private static final int MATRIX_SIZE = 3; //change back to 2000
 
         public static void main(String[] args) {
 		
@@ -14,7 +14,7 @@ public class MatrixMultiplication {
 		double[][] a = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
 		double[][] b = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
 		sequentialMultiplyMatrix(a, b);
-		parallelMultiplyMatrix(a, b);	
+//		parallelMultiplyMatrix(a, b);
 	}
 	
 	/**
@@ -25,7 +25,15 @@ public class MatrixMultiplication {
 	 * @return the result of the multiplication
 	 * */
 	public static double[][] sequentialMultiplyMatrix(double[][] a, double[][] b) {
-		
+		double[][] resultMatrix = new double[MATRIX_SIZE][MATRIX_SIZE];
+		for(int rowMatrixA=0; rowMatrixA<MATRIX_SIZE; rowMatrixA++){
+			for(int colMatrixB=0; colMatrixB<MATRIX_SIZE; colMatrixB++){
+				for(int colMatrixA=0; colMatrixA<MATRIX_SIZE; colMatrixA++){
+					resultMatrix[rowMatrixA][colMatrixB] += a[rowMatrixA][colMatrixA]*b[colMatrixA][colMatrixB];
+				}
+			}
+		}
+		return resultMatrix;
 	}
 	
 	/**
@@ -35,9 +43,9 @@ public class MatrixMultiplication {
 	 * @param b is the second matrix
 	 * @return the result of the multiplication
 	 * */
-        public static double[][] parallelMultiplyMatrix(double[][] a, double[][] b) {
-		
-	}
+//        public static double[][] parallelMultiplyMatrix(double[][] a, double[][] b) {
+//
+//	}
         
         /**
          * Populates a matrix of given size with randomly generated integers between 0-10.
