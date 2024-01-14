@@ -14,7 +14,7 @@ public class MatrixMultiplication {
 		double[][] a = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
 		double[][] b = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
 		sequentialMultiplyMatrix(a, b);
-//		parallelMultiplyMatrix(a, b);
+		parallelMultiplyMatrix(a, b);
 	}
 	
 	/**
@@ -43,9 +43,9 @@ public class MatrixMultiplication {
 	 * @param b is the second matrix
 	 * @return the result of the multiplication
 	 * */
-//        public static double[][] parallelMultiplyMatrix(double[][] a, double[][] b) {
-//
-//	}
+        public static double[][] parallelMultiplyMatrix(double[][] a, double[][] b) {
+
+	}
         
         /**
          * Populates a matrix of given size with randomly generated integers between 0-10.
