@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -90,7 +92,7 @@ public class DiningPhilosophers {
                     }
                     eatBoundTimeArray[NUMBER_PHILOSOPHERS - 1] = 5000;
                     thinkBoundTimeArray[NUMBER_PHILOSOPHERS - 1] = 5000;
-                    pickUpDelayArray[NUMBER_PHILOSOPHERS - 1] = 5*pickUpDelay;
+                    pickUpDelayArray[NUMBER_PHILOSOPHERS - 1] = 5 * pickUpDelay;
                     break;
                 default:
                     System.out.println("Invalid input");
@@ -124,7 +126,7 @@ public class DiningPhilosophers {
         if (validateArrays(eatBoundTime, thinkBoundTime, pickUpDelay)) return;
         // init chopsticks
         for (int i = 0; i < NUMBER_PHILOSOPHERS; i++) {
-            chopsticks[i] = new Chopstick(i, false);
+            chopsticks[i] = new ChopstickUnfair(i);
         }
         // Create philosophers (threads)
         for (int i = 0; i < NUMBER_PHILOSOPHERS; i++) {
@@ -139,7 +141,7 @@ public class DiningPhilosophers {
         if (validateArrays(eatBoundTime, thinkBoundTime, pickUpDelay)) return;
         // init chopsticks
         for (int i = 0; i < NUMBER_PHILOSOPHERS; i++) {
-            chopsticks[i] = new Chopstick(i, false);
+            chopsticks[i] = new ChopstickUnfair(i);
         }
         // Create philosophers (threads)
         for (int i = 0; i < NUMBER_PHILOSOPHERS; i++) {
@@ -154,7 +156,7 @@ public class DiningPhilosophers {
         if (validateArrays(eatBoundTime, thinkBoundTime, pickUpDelay)) return;
         // init chopsticks
         for (int i = 0; i < NUMBER_PHILOSOPHERS; i++) {
-            chopsticks[i] = new Chopstick(i, true);
+            chopsticks[i] = new ChopstickFair(i);
         }
         // Create philosophers (threads)
         for (int i = 0; i < NUMBER_PHILOSOPHERS; i++) {
@@ -279,18 +281,20 @@ public class DiningPhilosophers {
                 long endWait;
                 long startWait = endWait = think();
 
-                if (leftChopstick.pickUp(id)) {
+                if (id % 2 == 0) {
+                    leftChopstick.pickUp(id);
                     delay = delayPickUp();
-                    if (rightChopstick.pickUp(id)) {
-                        endWait = eat();
-                        System.out.println("Philosopher " + id + " waited " + (endWait - startWait - delay) + "ms");
-                        leftChopstick.putDown(id);
-                        rightChopstick.putDown(id);
-                    } else {
-                        leftChopstick.putDown(id);
-                        continue;
-                    }
+                    rightChopstick.pickUp(id);
+                } else {
+                    rightChopstick.pickUp(id);
+                    delay = delayPickUp();
+                    leftChopstick.pickUp(id);
                 }
+
+                endWait = eat();
+                System.out.println("Philosopher " + id + " waited " + (endWait - startWait - delay) + "ms");
+                leftChopstick.putDown(id);
+                rightChopstick.putDown(id);
 
                 // log the time spent waiting
                 waitTimes.add(endWait - startWait - delay);
@@ -317,18 +321,20 @@ public class DiningPhilosophers {
                 long endWait;
                 long startWait = endWait = think();
 
-                if (leftChopstick.pickUp(id)) {
+                if (id % 2 == 0) {
+                    leftChopstick.pickUp(id);
                     delay = delayPickUp();
-                    if (rightChopstick.pickUp(id)) {
-                        endWait = eat();
-                        System.out.println("Philosopher " + id + " waited " + (endWait - startWait - delay) + "ms");
-                        leftChopstick.putDown(id);
-                        rightChopstick.putDown(id);
-                    } else {
-                        leftChopstick.putDown(id);
-                        continue;
-                    }
+                    rightChopstick.pickUp(id);
+                } else {
+                    rightChopstick.pickUp(id);
+                    delay = delayPickUp();
+                    leftChopstick.pickUp(id);
                 }
+
+                endWait = eat();
+                System.out.println("Philosopher " + id + " waited " + (endWait - startWait - delay) + "ms");
+                leftChopstick.putDown(id);
+                rightChopstick.putDown(id);
 
                 // log the time spent waiting
                 waitTimes.add(endWait - startWait - delay);
@@ -336,24 +342,58 @@ public class DiningPhilosophers {
         }
     }
 
-    public static class Chopstick {
-        private final Lock lock;
+    public interface Chopstick {
+        boolean pickUp(int philosopherId);
+
+        void putDown(int philosopherId);
+    }
+
+    public static class ChopstickUnfair implements Chopstick {
+        private boolean inUse = false;
         private final int id;
 
-        public Chopstick(int id, Boolean fair) {
+        public ChopstickUnfair(int id) {
             this.id = id;
-            lock = new ReentrantLock(fair);
         }
 
         public synchronized boolean pickUp(int philosopherId) {
-            System.out.println("Philosopher " + philosopherId + " picked up chopstick " + id);
-            return lock.tryLock();
+            while (inUse) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    System.out.println("ERROR: Philosopher " + philosopherId + " was interrupted while waiting to pick up chopstick " + this.id);
+                }
+            }
+            System.out.println("Philosopher " + philosopherId + " is picking up chopstick " + this.id);
+            return inUse = true;
         }
 
         public synchronized void putDown(int philosopherId) {
-            System.out.println("Philosopher " + philosopherId + " put down chopstick " + id);
-            lock.unlock();
+            System.out.println("Philosopher " + philosopherId + " is putting down chopstick " + this.id);
+            inUse = false;
+            notify();
         }
     }
 
+    public static class ChopstickFair implements Chopstick {
+        private boolean inUse = false;
+        private final ArrayBlockingQueue<Integer> queue = new ArrayBlockingQueue<>(1, true);
+        private final Lock lock = new ReentrantLock(true);
+        private final int id;
+
+        public ChopstickFair(int id) {
+            this.id = id;
+        }
+
+        public boolean pickUp(int philosopherId) {
+            lock.lock();
+            System.out.println("Philosopher " + philosopherId + " is picking up chopstick " + this.id);
+            return true;
+        }
+
+        public void putDown(int philosopherId) {
+            lock.unlock();
+            System.out.println("Philosopher " + philosopherId + " is putting down chopstick " + this.id);
+        }
+    }
 }
