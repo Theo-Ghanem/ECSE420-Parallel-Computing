@@ -1,58 +1,69 @@
 package ca.mcgill.ecse420.a1;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 public class Deadlock {
+    public static void main(String[] args) {
+        final Lock lock1 = new ReentrantLock();
+        final Lock lock2 = new ReentrantLock();
 
-  // Code inspired from https://www.javatpoint.com/deadlock-in-java
-// and lecture notes
-  public static void main(String[] args) {
-    // Two resources that the threads will try to lock
-    final String resource1 = "resource1";
-    final String resource2 = "resource2";
+        // The first thread (t1) that will try to acquire lock1 then lock2
+        Thread t1 = new Thread(() -> {
+            // Try to acquire lock1
+            lock1.lock();
+            System.out.println("Thread 1: Acquired lock 1");
 
-    // The first thread (t1) that will try to lock resource1 then resource2
-    Thread t1 = new Thread() {
-      public void run() {
-        // Try to lock resource1
-        synchronized (resource1) {
-          System.out.println("Thread 1: locked resource 1");
+            // Sleep for a short time to allow the other thread to start running
+            try {
+                Thread.sleep(50);
+            } catch (Exception ignored) {
+            }
 
-          // Sleep for a short time to allow the other thread to start running
-          try {
-            Thread.sleep(50);
-          } catch (Exception ignored) {
-          }
+            // Try to acquire lock2
+            lock2.lock();
+            System.out.println("Thread 1: Acquired lock 2");
 
-          // Try to lock resource2
-          synchronized (resource2) {
-            System.out.println("Thread 1: locked resource 2");
-          }
+            // Release the locks
+            lock2.unlock();
+            System.out.println("Thread 1: Released lock 2");
+            lock1.unlock();
+            System.out.println("Thread 1: Released lock 1");
+        });
+
+        // The second thread (t2) that will try to acquire lock2 then lock1
+        Thread t2 = new Thread(() -> {
+            // Try to acquire lock2
+            lock2.lock();
+            System.out.println("Thread 2: Acquired lock 2");
+
+            // Sleep for a short time to allow the other thread to start running
+            try {
+                Thread.sleep(50);
+            } catch (Exception ignored) {
+            }
+
+            // Try to acquire lock1
+            lock1.lock();
+            System.out.println("Thread 2: Acquired lock 1");
+
+            // Release the locks
+            lock1.unlock();
+            System.out.println("Thread 2: Released lock 1");
+            lock2.unlock();
+            System.out.println("Thread 2: Released lock 2");
+        });
+
+        // Start the two threads
+        while (true) {
+            try {
+                t1.start();
+                t2.start();
+                t1.join();
+                t2.join();
+            } catch (InterruptedException e) {
+                System.out.println("Interrupted thread. Restarting...");
+            }
         }
-      }
-    };
-
-    // The second thread (t2) that will try to lock resource2 then resource1
-    Thread t2 = new Thread() {
-      public void run() {
-        // Try to lock resource2
-        synchronized (resource2) {
-          System.out.println("Thread 2: locked resource 2");
-
-          // Sleep for a short time to allow the other thread to start running
-          try {
-            Thread.sleep(50);
-          } catch (Exception ignored) {
-          }
-
-          // Try to lock resource1
-          synchronized (resource1) {
-            System.out.println("Thread 2: locked resource 1");
-          }
-        }
-      }
-    };
-
-    // Start the two threads
-    t1.start();
-    t2.start();
-  }
+    }
 }
