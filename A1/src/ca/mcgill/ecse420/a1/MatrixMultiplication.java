@@ -32,12 +32,12 @@ public class MatrixMultiplication {
       double[][] b;
 
       System.out.println("Which operation would you like to perform?");
-      System.out.println("1. [Q1.1] Sequential matrix multiplication");
-      System.out.println("2. [Q1.2] Parallel matrix multiplication");
-      System.out.println("3. [Q1.1 & 2] Check matrices result with Apache Commons Math library");
-      System.out.println("4. [Q1.4] Execute and plot matrix size with number of threads");
+      System.out.println("\t1. [Q1.1] Sequential matrix multiplication");
+      System.out.println("\t2. [Q1.2] Parallel matrix multiplication");
+      System.out.println("\t3. [Q1.1 & 2] Check matrices result with Apache Commons Math library");
+      System.out.println("\t4. [Q1.4] Execute and plot matrix size with number of threads");
       System.out.println(
-          "5. [Q1.5] Execute and plot multiple matrix sizes: 100, 200, 500, 1000, 2000, 3000, 4000");
+          "\t5. [Q1.5] Execute and plot multiple matrix sizes: 100, 200, 500, 1000, 2000, 3000, 4000");
       System.out.print("Enter choice number: ");
 
       int choice = scanner.nextInt();
@@ -65,8 +65,8 @@ public class MatrixMultiplication {
           a = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
           b = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
           System.out.println("Choose the type of execution: ");
-          System.out.println("1. Sequential matrix multiplication");
-          System.out.println("2. Parallel matrix multiplication");
+          System.out.println("\t1. Sequential matrix multiplication");
+          System.out.println("\t2. Parallel matrix multiplication");
           int answer = scanner.nextInt();
           boolean matricesAreEqual = false;
           switch (answer) {
