@@ -369,6 +369,4 @@ public class MatrixMultiplication {
     frame.setLocationRelativeTo(null);
     frame.setVisible(true);
   }
-
-
 }
