@@ -15,46 +15,104 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
+import java.util.Scanner;
 
 public class MatrixMultiplication {
 
-  private static int NUMBER_THREADS = 16;
-  private static int MATRIX_SIZE = 2000; //change back to 2000
+  private static int NUMBER_THREADS = 4;
+  private static int MATRIX_SIZE = 2000;
 
+  //Just run the main method to execute the program, then choose the operation you want to perform
   public static void main(String[] args) {
+    Scanner scanner = new Scanner(System.in);
+    String rerun;
+    do {
+      // Generate two random matrices, same size
+      double[][] a;
+      double[][] b;
 
-    // Generate two random matrices, same size
-    double[][] a = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
-    double[][] b = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
+      System.out.println("Which operation would you like to perform?");
+      System.out.println("1. [Q1.1] Sequential matrix multiplication");
+      System.out.println("2. [Q1.2] Parallel matrix multiplication");
+      System.out.println("3. [Q1.1 & 2] Check matrices result with Apache Commons Math library");
+      System.out.println("4. [Q1.4] Execute and plot matrix size with number of threads");
+      System.out.println(
+          "5. [Q1.5] Execute and plot multiple matrix sizes: 100, 200, 500, 1000, 2000, 3000, 4000");
+      System.out.print("Enter choice number: ");
 
-//    //Q1.1
-//    long sequentialDuration =
-//        measureExecutionTime(MatrixMultiplication::sequentialMultiplyMatrix, a, b) / 1_000_000_000;
-//    System.out.println("Sequential: " + sequentialDuration + " s");
-//
-//    //Q1.2
-//    long parallelDuration =
-//        measureExecutionTime(MatrixMultiplication::parallelMultiplyMatrix, a, b) / 1_000_000_000;
-//    System.out.println("Parallel: " + parallelDuration + " s");
-//
-//    System.out.println("parallel execution is " + sequentialDuration / parallelDuration
-//        + " times faster than sequential execution");
-//
-//    //Q1.1
-//    boolean matricesAreEqual = compareMatrices(a, b, parallelMultiplyMatrix(a, b));
-//    if (matricesAreEqual) {
-//      System.out.println("The matrices are equal.");
-//    } else {
-//      System.out.println("The matrices are not equal.");
-//    }
-//
-//    //Q1.4
-    executeAndPlot(a, b, NUMBER_THREADS);
+      int choice = scanner.nextInt();
 
-//    //Q1.5
-    int[] matrixSizes = {100, 200, 500, 1000, 2000, 3000, 4000};
-//    int[] matrixSizes = {100, 200, 500, 1000};
-//    executeAndPlotMatrixSize(NUMBER_THREADS, matrixSizes);
+      switch (choice) {
+        case 1:
+          System.out.print("Enter matrix size: ");
+          MATRIX_SIZE = scanner.nextInt();
+          a = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
+          b = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
+          measureExecutionTime(MatrixMultiplication::sequentialMultiplyMatrix, a, b);
+          break;
+        case 2:
+          System.out.print("Enter matrix size: ");
+          MATRIX_SIZE = scanner.nextInt();
+          System.out.print("Enter number of threads: ");
+          NUMBER_THREADS = scanner.nextInt();
+          a = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
+          b = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
+          measureExecutionTime(MatrixMultiplication::parallelMultiplyMatrix, a, b);
+          break;
+        case 3:
+          System.out.print("Enter matrix size: ");
+          MATRIX_SIZE = scanner.nextInt();
+          a = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
+          b = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
+          System.out.println("Choose the type of execution: ");
+          System.out.println("1. Sequential matrix multiplication");
+          System.out.println("2. Parallel matrix multiplication");
+          int answer = scanner.nextInt();
+          boolean matricesAreEqual = false;
+          switch (answer) {
+            case 1:
+              matricesAreEqual = compareMatrices(a, b, sequentialMultiplyMatrix(a, b));
+              break;
+            case 2:
+              System.out.print("Enter number of threads: ");
+              NUMBER_THREADS = scanner.nextInt();
+              matricesAreEqual = compareMatrices(a, b, parallelMultiplyMatrix(a, b));
+              break;
+            default:
+              System.out.println("Invalid choice.");
+              break;
+          }
+          if (matricesAreEqual) {
+            System.out.println("The matrices are equal.");
+          } else {
+            System.out.println("The matrices are not equal.");
+          }
+          break;
+        case 4:
+          System.out.print("Enter matrix size (set to 2000 for Q1.4): ");
+          MATRIX_SIZE = scanner.nextInt();
+          System.out.print("Enter number of threads: ");
+          NUMBER_THREADS = scanner.nextInt();
+          a = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
+          b = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
+          executeAndPlot(a, b, NUMBER_THREADS);
+          break;
+        case 5:
+          System.out.print("Enter number of threads: ");
+          NUMBER_THREADS = scanner.nextInt();
+          int[] matrixSizes = {100, 200, 500, 1000, 2000, 3000, 4000};
+          executeAndPlotMatrixSize(NUMBER_THREADS, matrixSizes);
+          break;
+        default:
+          System.out.println("Invalid choice.");
+          break;
+      }
+      System.out.println("Do you want to rerun the program? (yes/no)");
+      rerun = scanner.next().toLowerCase();
+
+    } while (rerun.equals("yes") || rerun.equals("y"));
+
+    scanner.close();
   }
 
   /**
@@ -149,7 +207,7 @@ public class MatrixMultiplication {
     long endTime = System.nanoTime();
     long duration = endTime - startTime;
 //    System.out.println("Execution time in nanoseconds: " + duration);
-//    System.out.println("Execution time in milliseconds: " + duration / 1_000_000);
+    System.out.println("Execution time in milliseconds: " + duration / 1_000_000);
     System.out.println("Execution time in seconds: " + duration / 1_000_000_000);
     return duration;
   }
@@ -173,9 +231,9 @@ public class MatrixMultiplication {
    * Helper method to compare two matrices and check if they are equal using Apache Commons Math
    * library
    *
-   * @param a
-   * @param b
-   * @param matrixToBeChecked
+   * @param a                 first matrix
+   * @param b                 second matrix
+   * @param matrixToBeChecked matrix to be checked
    * @return
    */
   public static boolean compareMatrices(double[][] a, double[][] b, double[][] matrixToBeChecked) {
