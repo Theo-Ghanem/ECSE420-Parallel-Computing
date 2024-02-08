@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.Random;
 import java.util.Scanner;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -112,11 +110,9 @@ public class DiningPhilosophers {
                     break;
                 default:
                     System.out.println("Invalid input");
-                    return;
             }
         } catch (InputMismatchException e) {
             System.out.println("Invalid input");
-            return;
         }
     }
 
@@ -277,9 +273,9 @@ public class DiningPhilosophers {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> System.out.println("Philosopher " + id + " wait times: " + waitTimes)));
 
             while (true) {
-                long delay = 0;
+                long delay;
                 long endWait;
-                long startWait = endWait = think();
+                long startWait = think();
 
                 if (id % 2 == 0) {
                     leftChopstick.pickUp(id);
@@ -317,9 +313,9 @@ public class DiningPhilosophers {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> System.out.println("Philosopher " + id + " wait times: " + waitTimes)));
 
             while (true) {
-                long delay = 0;
+                long delay;
                 long endWait;
-                long startWait = endWait = think();
+                long startWait = think();
 
                 if (id % 2 == 0) {
                     leftChopstick.pickUp(id);
@@ -343,7 +339,7 @@ public class DiningPhilosophers {
     }
 
     public interface Chopstick {
-        boolean pickUp(int philosopherId);
+        void pickUp(int philosopherId);
 
         void putDown(int philosopherId);
     }
@@ -356,7 +352,7 @@ public class DiningPhilosophers {
             this.id = id;
         }
 
-        public synchronized boolean pickUp(int philosopherId) {
+        public synchronized void pickUp(int philosopherId) {
             while (inUse) {
                 try {
                     wait();
@@ -365,7 +361,7 @@ public class DiningPhilosophers {
                 }
             }
             System.out.println("Philosopher " + philosopherId + " is picking up chopstick " + this.id);
-            return inUse = true;
+            inUse = true;
         }
 
         public synchronized void putDown(int philosopherId) {
@@ -376,8 +372,6 @@ public class DiningPhilosophers {
     }
 
     public static class ChopstickFair implements Chopstick {
-        private boolean inUse = false;
-        private final ArrayBlockingQueue<Integer> queue = new ArrayBlockingQueue<>(1, true);
         private final Lock lock = new ReentrantLock(true);
         private final int id;
 
@@ -385,10 +379,9 @@ public class DiningPhilosophers {
             this.id = id;
         }
 
-        public boolean pickUp(int philosopherId) {
+        public void pickUp(int philosopherId) {
             lock.lock();
             System.out.println("Philosopher " + philosopherId + " is picking up chopstick " + this.id);
-            return true;
         }
 
         public void putDown(int philosopherId) {
