@@ -8,8 +8,6 @@ import javax.swing.JFrame;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
-import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
@@ -206,7 +204,6 @@ public class MatrixMultiplication {
     methodToMeasure.apply(matrix1, matrix2);
     long endTime = System.nanoTime();
     long duration = endTime - startTime;
-//    System.out.println("Execution time in nanoseconds: " + duration);
     System.out.println("Execution time in milliseconds: " + duration / 1_000_000);
     System.out.println("Execution time in seconds: " + duration / 1_000_000_000);
     return duration;
@@ -284,7 +281,6 @@ public class MatrixMultiplication {
       long parallelDuration = measureExecutionTime(MatrixMultiplication::parallelMultiplyMatrix, a,
           b);
       seriesParallel.add(i, parallelDuration / 1_000_000_000);
-//      System.out.println(parallelDuration / 1_000_000_000 + " seconds");
     }
 
     XYSeriesCollection dataset = new XYSeriesCollection();
@@ -359,8 +355,6 @@ public class MatrixMultiplication {
    */
   private static void setPlotSettings(JFreeChart chart) {
     // Set the X-axis to only allow integer tick units
-//    NumberAxis xAxis = (NumberAxis) chart.getXYPlot().getDomainAxis();
-//    xAxis.setTickUnit(new NumberTickUnit(1)); // Set custom tick unit
     ChartPanel panel = new ChartPanel(chart);
     JFrame frame = new JFrame();
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
