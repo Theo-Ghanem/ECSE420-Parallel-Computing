@@ -1,5 +1,8 @@
 package ca.mcgill.ecse420.a2;
 
+/**
+ * Code provided by Prof. Denis Giannacopoulos
+ */
 public class ThreadID {
 
   private static volatile int currentID = 0;
