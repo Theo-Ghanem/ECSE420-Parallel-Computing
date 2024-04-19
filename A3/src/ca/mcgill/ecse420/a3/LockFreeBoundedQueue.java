@@ -71,5 +71,9 @@ public class LockFreeBoundedQueue<T> {
         newHead)); // If the head is trailing behind, keep updating it
     return items[expectedHead]; // Return the dequeued item at the head
   }
+
+  public static void main(String[] args) {
+
+  }
 }
 
