@@ -1,5 +1,6 @@
 package ca.mcgill.ecse420.a3;
 
+import java.util.Vector;
 import java.util.concurrent.*;
 
 public class MatrixVectorMultiplication {
@@ -62,12 +63,57 @@ public class MatrixVectorMultiplication {
         }
     }
 
+    public class Vector {
+
+        int dim;
+        double[] data;
+        int displace;
+
+        public Vector(int d) {
+            dim = d;
+            data = new double[d];
+        }
+
+        private Vector(double[] vector, int x, int d) {
+            data = vector;
+            displace = x;
+            dim = d;
+        }
+
+        public double get(int i) {
+            return data[i + displace];
+        }
+
+        public void set(int i, double value) {
+            data[i + displace] = value;
+        }
+
+        public int getDim() {
+            return dim;
+        }
+
+        Vector[] split() {
+            Vector[] result = new Vector[2];
+            int newDim = this.dim / 2;
+            result[0] = new Vector(this.data, this.displace, newDim);
+            result[1] = new Vector(this.data, this.displace + newDim, newDim);
+            return result;
+        }
+
+        public void printVector() {
+            for (int i = 0; i < dim; i++) {
+                System.out.print(data[displace + i] + " ");
+            }
+            System.out.println();
+        }
+    }
+
     public class MatrixTask {
 
         // initialize the cached thread pool executor with 10 threads using the Executors factory
-        int corePoolSize = 0;  // Minimum number of threads in the pool
+        int corePoolSize = 5;  // Minimum number of threads in the pool
         int maximumPoolSize = 10;  // Maximum number of threads in the pool
-        long keepAliveTime = 60L;  // Keep alive time for idle threads
+        long keepAliveTime = 1L;  // Keep alive time for idle threads
         TimeUnit unit = TimeUnit.SECONDS;
         BlockingQueue<Runnable> workQueue = new SynchronousQueue<Runnable>();  // Workqueue for holding tasks
 
@@ -125,6 +171,37 @@ public class MatrixVectorMultiplication {
             }
         }
 
+        class AddVectorTask implements Runnable {
+
+            Vector a, b, c;
+
+            public AddVectorTask(Vector myA, Vector myB, Vector myC) {
+                a = myA;
+                b = myB;
+                c = myC;
+            }
+
+            public void run() {
+                try {
+                    int n = a.getDim();
+                    if (n == 1) {
+                        c.set(0, a.get(0) + b.get(0));
+                    } else {
+                        Vector[] aa = a.split(), bb = b.split(), cc = c.split();
+                        Future<?>[] future = (Future<?>[]) new Future[2];
+                        for (int i = 0; i < 2; i++) {
+                            future[i] = exec.submit(new AddVectorTask(aa[i], bb[i], cc[i]));
+                        }
+                        for (int i = 0; i < 2; i++) {
+                            future[i].get();
+                        }
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+
 
         class MulTask implements Runnable {
 
@@ -165,6 +242,49 @@ public class MatrixVectorMultiplication {
                         done.get();
                     }
                 } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+
+        class MulVectorTask implements Runnable {
+
+            Matrix a;
+            Vector b, c, lhs, rhs;
+
+            public MulVectorTask(Matrix myA, Vector myB, Vector myC) {
+                a = myA;
+                b = myB;
+                c = myC;
+                lhs = new Vector(a.getDim());
+                rhs = new Vector(a.getDim());
+            }
+
+            public void run() {
+                try {
+                    if (a.getDim() == 1) {
+                        c.set(0, a.get(0, 0) * b.get(0));
+                    } else {
+                        Matrix[][] aa = a.split();
+                        Vector[] bb = b.split();
+                        Vector[] ll = lhs.split(), rr = rhs.split();
+                        Future<?>[][] future = (Future<?>[][]) new Future[2][2];
+                        for (int i = 0; i < 2; i++) {
+                            future[i][0] =
+                                    exec.submit(new MulVectorTask(aa[i][0], bb[0], ll[i]));
+                            future[i][1] =
+                                    exec.submit(new MulVectorTask(aa[i][1], bb[1], rr[i]));
+                        }
+                        for (int i = 0; i < 2; i++) {
+                            for (int k = 0; k < 2; k++) {
+                                future[i][k].get();
+                            }
+                        }
+                        Future<?> done = exec.submit(new AddVectorTask(lhs, rhs, c));
+                        done.get();
+                    }
+                } catch (
+                        Exception ex) {
                     ex.printStackTrace();
                 }
             }
@@ -343,8 +463,158 @@ public class MatrixVectorMultiplication {
         }
     }
 
+    public static void testAddMatrixVector(int n) {
+        // write a test for the parallel matrix-vector multiplication:
+        MatrixVectorMultiplication mvm = new MatrixVectorMultiplication();
+        MatrixTask mt = mvm.new MatrixTask();
+        Vector a = mvm.new Vector(n);
+        Vector b = mvm.new Vector(n);
+
+        //fill int the matrices with random integer values:
+        for (int i = 0; i < n; i++) {
+            b.set(i, (int) (Math.random() * 10));
+            a.set(i, (int) (Math.random() * 10));
+        }
+
+        //add the matrices:
+        try {
+            Vector c = mvm.new Vector(n);
+
+            mt.new AddVectorTask(a, b, c).run();
+            System.out.println("Matrix a:");
+            for (int i = 0; i < n; i++) {
+                System.out.print(a.get(i) + " ");
+            }
+            System.out.println();
+            System.out.println("Vector b:");
+            for (int i = 0; i < n; i++) {
+                System.out.print(b.get(i) + " ");
+            }
+            System.out.println();
+            System.out.println("Vector c:");
+            for (int i = 0; i < n; i++) {
+                System.out.print(c.get(i) + " ");
+            }
+
+            // calculate expected result
+            double[] expected = new double[n];
+            for (int i = 0; i < n; i++) {
+                expected[i] = a.get(i) + b.get(i);
+            }
+
+            // compare the expected result with the actual result
+            boolean correct = true;
+            for (int i = 0; i < n; i++) {
+                if (expected[i] != c.get(i)) {
+                    correct = false;
+                    break;
+                }
+            }
+            if (correct) {
+                System.out.println("The result is correct!");
+            } else {
+                System.out.println("\nThe result is incorrect!");
+                System.out.println("Expected result:");
+                for (int i = 0; i < n; i++) {
+                    System.out.print(expected[i] + " ");
+                }
+                System.out.println();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void testMultiplyMatrixVector(int n, boolean verbose) {
+        // write a test for the parallel matrix-vector multiplication:
+        MatrixVectorMultiplication mvm = new MatrixVectorMultiplication();
+        MatrixTask mt = mvm.new MatrixTask();
+        Matrix a = mvm.new Matrix(n);
+        Vector b = mvm.new Vector(n);
+
+        //fill int the matrices with random integer values:
+        for (int i = 0; i < n; i++) {
+            b.set(i, (int) (Math.random() * 10));
+            for (int j = 0; j < n; j++) {
+                a.set(i, j, (int) (Math.random() * 10));
+            }
+        }
+
+        //multiply the matrices:
+        try {
+            Vector c = mvm.new Vector(n);
+
+
+            if (verbose) {
+                System.out.println("Matrix a:");
+                for (int i = 0; i < n; i++) {
+                    for (int j = 0; j < n; j++) {
+                        System.out.print(a.get(i, j) + " ");
+                    }
+                    System.out.println();
+                }
+
+                System.out.println("Vector b:");
+                for (int i = 0; i < n; i++) {
+                    System.out.print(b.get(i) + " ");
+                }
+                System.out.println();
+            }
+
+            // measure the time it takes to multiply the matrices
+            long startTime = System.currentTimeMillis();
+            mt.new MulVectorTask(a, b, c).run();
+            long endTime = System.currentTimeMillis();
+
+            if (verbose) {
+                System.out.println("Vector c:");
+                for (int i = 0; i < n; i++) {
+                    System.out.print(c.get(i) + " ");
+                }
+            }
+
+            // calculate expected result
+            long startTimeSeq = System.currentTimeMillis();
+            double[] expected = new double[n];
+            for (int i = 0; i < n; i++) {
+                expected[i] = 0;
+                for (int j = 0; j < n; j++) {
+                    expected[i] += a.get(i, j) * b.get(j);
+                }
+            }
+            long endTimeSeq = System.currentTimeMillis();
+
+            // compare the expected result with the actual result
+            boolean correct = true;
+            for (int i = 0; i < n; i++) {
+                if (expected[i] != c.get(i)) {
+                    correct = false;
+                    break;
+                }
+            }
+            if (correct) {
+                System.out.println("The result is correct!");
+                System.out.println("Parallel Time Taken: " + (endTime - startTime) + "ms");
+                System.out.println("Sequential Time Taken: " + (endTimeSeq - startTimeSeq) + "ms");
+            } else {
+                System.out.println("\nThe result is incorrect!");
+                System.out.println("Parallel Time Taken: " + (endTime - startTime) + "ms");
+                System.out.println("Sequential Time Taken: " + (endTimeSeq - startTimeSeq) + "ms");
+                if (verbose) {
+                    System.out.println("Expected result:");
+                    for (int i = 0; i < n; i++) {
+                        System.out.print(expected[i] + " ");
+                    }
+                    System.out.println();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void main(String[] args) {
-        testMultiplyMatrixMatrix(4096, false);
+        testMultiplyMatrixVector(4096, false);
     }
 
 }
