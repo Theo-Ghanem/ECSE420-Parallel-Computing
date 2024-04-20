@@ -548,16 +548,16 @@ public class MatrixVectorMultiplication {
         System.out.println("Matrix a:");
         for (int i = 0; i < n; i++) {
           for (int j = 0; j < n; j++) {
-//            System.out.print(a.get(i, j) + " ");
+            System.out.print(a.get(i, j) + " ");
           }
-//          System.out.println();
+          System.out.println();
         }
 
         System.out.println("Vector b:");
         for (int i = 0; i < n; i++) {
-//          System.out.print(b.get(i) + " ");
+          System.out.print(b.get(i) + " ");
         }
-//        System.out.println();
+        System.out.println();
       }
 
       // measure the time it takes to multiply the matrices
@@ -568,7 +568,7 @@ public class MatrixVectorMultiplication {
       if (verbose) {
         System.out.println("Vector c:");
         for (int i = 0; i < n; i++) {
-//          System.out.print(c.get(i) + " ");
+          System.out.print(c.get(i) + " ");
         }
       }
 
@@ -613,7 +613,7 @@ public class MatrixVectorMultiplication {
   }
 
   public static void main(String[] args) {
-    testMultiplyMatrixVector(20096, true);
+    testMultiplyMatrixVector(4096, false);
   }
 
 }
