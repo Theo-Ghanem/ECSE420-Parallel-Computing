@@ -3,6 +3,13 @@ package ca.mcgill.ecse420.a3;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.Random;
 
+/**
+ * SynchronizationAlgorithm class that implements a linked list with add, remove, and contains
+ * operations. The class uses fine-grained synchronization to ensure thread safety.
+ *
+ * @param <T>
+ * @author From lecture slides and textbook "Art of Multiprocessor Programming" Chap 9 Page 202-203
+ */
 public class SynchronizationAlgorithm<T> {
 
   /**
@@ -172,8 +179,6 @@ public class SynchronizationAlgorithm<T> {
    * @return size of the list
    */
   public int size() {
-    // Implement logic to count the number of elements in the list
-    // You can traverse the linked list to count nodes
     int count = 0;
     Node current = head.next;
     while (current != tail) {
